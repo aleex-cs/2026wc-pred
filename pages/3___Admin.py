@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from config import ROUNDS, ROUND_LABELS, TEAMS_PER_ROUND
-from data_manager import get_current_window, get_results, save_result_batch, get_teams_for_window
+from data_manager import get_current_window, get_results, save_result_batch, get_teams_for_window, get_windows_state, set_window_state
 from styles import inject_custom_styles
 from auth import get_all_registered_users
 from scoring import calculate_user_score
@@ -70,6 +70,32 @@ for i, ronda in enumerate(ROUNDS):
         """, unsafe_allow_html=True)
 
 st.markdown(f"**Ventana activa:** `{current_window}`")
+st.markdown("---")
+
+# ── Window control ──
+st.markdown("#### Control de Ventanas de Predicción")
+st.info("Activa o desactiva las ventanas de predicción. Si una ventana está desactivada, los usuarios no podrán hacer predicciones en esa fase.")
+
+windows_state = get_windows_state()
+window_labels = {
+    "P1": "P1 - Inicio (×4)",
+    "P2": "P2 - Octavos (×3)",
+    "P3": "P3 - Cuartos (×2)",
+    "P4": "P4 - Semis (×1.5)",
+    "P5": "P5 - Final (×1)"
+}
+
+col1, col2, col3, col4, col5 = st.columns(5)
+cols = [col1, col2, col3, col4, col5]
+
+for i, (window, label) in enumerate(window_labels.items()):
+    with cols[i]:
+        is_enabled = windows_state.get(window, True)
+        if st.toggle(label, value=is_enabled, key=f"toggle_{window}"):
+            set_window_state(window, True)
+        else:
+            set_window_state(window, False)
+
 st.markdown("---")
 
 # ── Results input ──

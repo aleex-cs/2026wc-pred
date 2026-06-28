@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from config import ROUNDS, ROUND_LABELS, TEAMS_PER_ROUND, ROUND_OF_32_MATCHUPS, FLAGS
-from data_manager import get_current_window, get_teams_for_window, save_user_prediction, lock_prediction, is_prediction_locked, load_user_prediction, get_results
+from data_manager import get_current_window, get_teams_for_window, save_user_prediction, lock_prediction, is_prediction_locked, load_user_prediction, get_results, is_window_enabled
 from styles import inject_custom_styles, render_bracket_view
 
 st.set_page_config(page_title="Predicción · Mundial 2026", layout="wide", page_icon="🔮")
@@ -38,6 +38,10 @@ window = get_current_window()
 
 if window == "FINISHED":
     st.info("🏁 El torneo ha finalizado. Ya no se pueden hacer más predicciones.")
+    st.stop()
+
+if not is_window_enabled(window):
+    st.error(f"🔒 La ventana de predicción {window} está desactivada por el administrador. No se pueden hacer predicciones en este momento.")
     st.stop()
 
 # ── Header ──
