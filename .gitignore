@@ -5,7 +5,7 @@
 # --- ARCHIVOS DE USUARIOS / BASE DE DATOS LOCAL ---
 # Como tu app crea "data/users.json", no querrás que tus usuarios de prueba 
 # locales sobrescriban la base de datos de producción en la nube.
-data/
+data/users.json
 
 # --- ARCHIVOS TEMPORALES DE PYTHON ---
 __pycache__/
