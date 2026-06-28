@@ -1,15 +1,41 @@
 # pages/4___Reglamento.py
 import streamlit as st
 from styles import inject_custom_styles
+from auth import logout_user
 
 st.set_page_config(
     page_title="Reglamento - Mundial 2026",
     layout="wide",
     page_icon="📋",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 inject_custom_styles()
+
+if "logged_in" not in st.session_state or not st.session_state.logged_in:
+    st.warning("Por favor, inicia sesión en la página principal.")
+    if st.button("← Volver al inicio"):
+        st.switch_page("app.py")
+    st.stop()
+
+# ── Sidebar ──
+with st.sidebar:
+    st.markdown(f"""
+    <div style="padding: 16px 0 8px 0;">
+        <p style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.1em; color:#FFD700 !important; margin:0;">Sesión activa</p>
+        <h3 style="margin:4px 0 0 0; font-size:1.3rem; color:#fff !important;">{st.session_state.username.capitalize()}</h3>
+    </div>
+    """, unsafe_allow_html=True)
+    st.divider()
+    st.page_link("app.py", label="🏠 Inicio")
+    st.page_link("pages/1___Predicción.py", label="🔮 Mi Predicción")
+    st.page_link("pages/2___Clasificación.py", label="📊 Clasificación")
+    st.page_link("pages/4___Reglamento.py", label="📋 Reglamento")
+    if st.session_state.get("is_admin"):
+        st.page_link("pages/3___Admin.py", label="👑 Admin")
+    st.divider()
+    if st.button("Cerrar Sesión", type="primary", use_container_width=True):
+        logout_user()
 
 # Header
 st.markdown("""

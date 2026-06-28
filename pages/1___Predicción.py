@@ -25,6 +25,7 @@ with st.sidebar:
     st.page_link("app.py", label="🏠 Inicio")
     st.page_link("pages/1___Predicción.py", label="🔮 Mi Predicción")
     st.page_link("pages/2___Clasificación.py", label="📊 Clasificación")
+    st.page_link("pages/4___Reglamento.py", label="📋 Reglamento")
     if st.session_state.get("is_admin"):
         st.page_link("pages/3___Admin.py", label="👑 Admin")
     st.divider()

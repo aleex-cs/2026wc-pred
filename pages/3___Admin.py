@@ -31,6 +31,7 @@ with st.sidebar:
     st.page_link("app.py", label="🏠 Inicio")
     st.page_link("pages/1___Predicción.py", label="🔮 Predicción")
     st.page_link("pages/2___Clasificación.py", label="📊 Clasificación")
+    st.page_link("pages/4___Reglamento.py", label="📋 Reglamento")
     st.page_link("pages/3___Admin.py", label="👑 Admin")
     st.divider()
     from auth import logout_user
