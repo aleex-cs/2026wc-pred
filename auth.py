@@ -1,28 +1,25 @@
-# auth.py
 import hashlib
-import json
-import os
 import streamlit as st
+from supabase import create_client, Client
 
-DATA_DIR = "data"
-USERS_FILE = os.path.join(DATA_DIR, "users.json")
-# Admin password: qt5Xq6Lr5%
-# Obtenemos la contraseña desde los secretos de Streamlit
+# Inicializamos la conexión con Supabase usando los Secrets seguros
+try:
+    url: str = st.secrets["SUPABASE_URL"]
+    key: str = st.secrets["SUPABASE_KEY"]
+    supabase: Client = create_client(url, key)
+except KeyError:
+    st.error("Faltan las credenciales de Supabase en los Secrets.")
+
+# Admin password desde secrets
 try:
     ADMIN_PASSWORD = st.secrets["ADMIN_PASSWORD"]
     ADMIN_PASSWORD_HASH = hashlib.sha256(ADMIN_PASSWORD.encode()).hexdigest()
 except KeyError:
-    # Por si se te olvida configurarlo, la app no crasheará y te avisará
     st.error("Falta configurar ADMIN_PASSWORD en los secretos.")
     ADMIN_PASSWORD_HASH = None
 
 def init_auth():
-    if not os.path.exists(DATA_DIR):
-        os.makedirs(DATA_DIR)
-    if not os.path.exists(USERS_FILE):
-        with open(USERS_FILE, "w", encoding="utf-8") as f:
-            json.dump({}, f)
-
+    # Ya no creamos carpetas ni archivos JSON locales
     if "logged_in" not in st.session_state:
         st.session_state.logged_in = False
         st.session_state.username = None
@@ -38,18 +35,21 @@ def register_user(username, password):
     if username == "admin":
         return False, "Nombre de usuario reservado."
 
-    with open(USERS_FILE, "r", encoding="utf-8") as f:
-        users = json.load(f)
-
-    if username in users:
-        return False, "Ese nombre de usuario ya está en uso."
-
-    users[username] = hash_password(password)
-
-    with open(USERS_FILE, "w", encoding="utf-8") as f:
-        json.dump(users, f)
-
-    return True, "¡Registro exitoso!"
+    # Consultamos a Supabase si el usuario ya existe
+    try:
+        response = supabase.table("users").select("username").eq("username", username).execute()
+        if response.data:
+            return False, "Ese nombre de usuario ya está en uso."
+        
+        # Si no existe, lo insertamos en la base de datos en la nube
+        new_user = {
+            "username": username,
+            "password_hash": hash_password(password)
+        }
+        supabase.table("users").insert(new_user).execute()
+        return True, "¡Registro exitoso!"
+    except Exception as e:
+        return False, f"Error al registrar: {str(e)}"
 
 def login_user(username, password):
     username = username.strip().lower()
@@ -63,22 +63,25 @@ def login_user(username, password):
         else:
             return False, "Contraseña incorrecta."
 
-    if not os.path.exists(USERS_FILE):
-        return False, "No hay usuarios registrados."
+    # Buscamos el usuario en Supabase
+    try:
+        response = supabase.table("users").select("*").eq("username", username).execute()
+        
+        if not response.data:
+            return False, "El usuario no existe."
 
-    with open(USERS_FILE, "r", encoding="utf-8") as f:
-        users = json.load(f)
-
-    if username not in users:
-        return False, "El usuario no existe."
-
-    if users[username] == hash_password(password):
-        st.session_state.logged_in = True
-        st.session_state.username = username
-        st.session_state.is_admin = False
-        return True, "Login exitoso."
-
-    return False, "Contraseña incorrecta."
+        user_data = response.data[0]
+        
+        # Comparamos el hash de la contraseña ingresada con el de la base de datos
+        if user_data["password_hash"] == hash_password(password):
+            st.session_state.logged_in = True
+            st.session_state.username = username
+            st.session_state.is_admin = False
+            return True, "Login exitoso."
+        
+        return False, "Contraseña incorrecta."
+    except Exception as e:
+        return False, f"Error en el servidor: {str(e)}"
 
 def logout_user():
     st.session_state.logged_in = False
@@ -87,8 +90,8 @@ def logout_user():
     st.rerun()
 
 def get_all_registered_users():
-    if not os.path.exists(USERS_FILE):
+    try:
+        response = supabase.table("users").select("username").execute()
+        return [user["username"] for user in response.data]
+    except:
         return []
-    with open(USERS_FILE, "r", encoding="utf-8") as f:
-        users = json.load(f)
-    return list(users.keys())
