@@ -50,23 +50,23 @@ def get_teams_for_window(window):
     return []
 
 def save_user_prediction(user, window, predictions):
-    """Save user prediction to Supabase."""
+    """Save user prediction to Supabase. predictions is a dict {ronda: [equipos]}."""
     # Check if prediction exists
     existing = supabase.table("predictions").select("*").eq("username", user).eq("prediction_window", window).execute()
     
     if existing.data:
-        # Update existing
+        # Update existing - save entire bracket as JSON
         supabase.table("predictions").update({
-            "ronda": predictions.get("ronda", ""),
-            "equipos": predictions.get("equipos", [])
+            "ronda": "full_bracket",
+            "equipos": predictions
         }).eq("username", user).eq("prediction_window", window).execute()
     else:
-        # Insert new
+        # Insert new - save entire bracket as JSON
         supabase.table("predictions").insert({
             "username": user,
             "prediction_window": window,
-            "ronda": predictions.get("ronda", ""),
-            "equipos": predictions.get("equipos", [])
+            "ronda": "full_bracket",
+            "equipos": predictions
         }).execute()
 
 def lock_prediction(user, window):
@@ -85,11 +85,11 @@ def is_prediction_locked(user, window):
     return len(response.data) > 0
 
 def load_user_prediction(user, window):
-    """Load user prediction from Supabase."""
+    """Load user prediction from Supabase. Returns the full bracket dict."""
     response = supabase.table("predictions").select("*").eq("username", user).eq("prediction_window", window).execute()
     if response.data:
         row = response.data[0]
-        return {"ronda": row["ronda"], "equipos": row["equipos"]}
+        return row["equipos"]
     return None
 
 def get_all_locked_windows(user):
