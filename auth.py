@@ -3,12 +3,28 @@ import streamlit as st
 from supabase import create_client, Client
 
 # Inicializamos la conexión con Supabase usando los Secrets seguros
+import hashlib
+import streamlit as st
+from supabase import create_client, Client
+
+# 1. Definimos la variable vacía para evitar el "NameError"
+supabase = None
+
+# 2. Intentamos conectar e inyectamos un mensaje de error claro si falla
 try:
     url: str = st.secrets["SUPABASE_URL"]
     key: str = st.secrets["SUPABASE_KEY"]
     supabase: Client = create_client(url, key)
-except KeyError:
-    st.error("Faltan las credenciales de Supabase en los Secrets.")
+except Exception as e:
+    # Esto aparecerá arriba en tu app si Streamlit no encuentra el archivo
+    st.error(f"Fallo crítico: No se pudo conectar a la base de datos. Motivo: {str(e)}")
+
+# Admin password desde secrets
+try:
+    ADMIN_PASSWORD = st.secrets["ADMIN_PASSWORD"]
+    ADMIN_PASSWORD_HASH = hashlib.sha256(ADMIN_PASSWORD.encode()).hexdigest()
+except Exception as e:
+    ADMIN_PASSWORD_HASH = None
 
 # Admin password desde secrets
 try:
