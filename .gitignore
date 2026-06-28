@@ -1,0 +1,24 @@
+# --- SECRETOS DE STREAMLIT ---
+# Esto evita que tu contraseña local se suba a GitHub
+.streamlit/secrets.toml
+
+# --- ARCHIVOS DE USUARIOS / BASE DE DATOS LOCAL ---
+# Como tu app crea "data/users.json", no querrás que tus usuarios de prueba 
+# locales sobrescriban la base de datos de producción en la nube.
+data/
+
+# --- ARCHIVOS TEMPORALES DE PYTHON ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# --- ARCHIVOS DEL SISTEMA OPERATIVO ---
+.DS_Store
+Thumbs.db
