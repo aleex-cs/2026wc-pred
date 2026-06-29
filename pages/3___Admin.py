@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from config import ROUNDS, ROUND_LABELS, TEAMS_PER_ROUND
-from data_manager import get_current_window, get_results, save_result_batch, get_teams_for_window, get_windows_state, set_window_state
+from data_manager import get_current_window, get_results, save_result_batch, get_teams_for_window, get_windows_state, set_window_state, get_round_matchups, save_match_result, get_match_results
 from styles import inject_custom_styles
 from auth import get_all_registered_users
 from scoring import calculate_user_score
@@ -102,56 +102,79 @@ st.markdown("---")
 tab_results, tab_users = st.tabs(["📥 Cargar Resultados", "👥 Gestión de Usuarios"])
 
 with tab_results:
-    ronda_a_rellenar = None
-    equipos_disponibles = []
+    # Select round to input results
+    round_options = ["dieciseisavos", "octavos", "cuartos", "semis", "final", "campeon"]
+    selected_round = st.selectbox(
+        "Selecciona la ronda para introducir resultados:",
+        round_options,
+        format_func=lambda x: ROUND_LABELS.get(x, x)
+    )
 
-    if len(res["octavos"]) < TEAMS_PER_ROUND["octavos"]:
-        ronda_a_rellenar = "octavos"
-        equipos_disponibles = get_teams_for_window("P1")
-    elif len(res["cuartos"]) < TEAMS_PER_ROUND["cuartos"]:
-        ronda_a_rellenar = "cuartos"
-        equipos_disponibles = res["octavos"]
-    elif len(res["semis"]) < TEAMS_PER_ROUND["semis"]:
-        ronda_a_rellenar = "semis"
-        equipos_disponibles = res["cuartos"]
-    elif len(res["final"]) < TEAMS_PER_ROUND["final"]:
-        ronda_a_rellenar = "final"
-        equipos_disponibles = res["semis"]
-    elif len(res["campeon"]) < TEAMS_PER_ROUND["campeon"]:
-        ronda_a_rellenar = "campeon"
-        equipos_disponibles = res["final"]
+    st.markdown("---")
+    
+    # Get matchups for selected round
+    matchups = get_round_matchups(selected_round)
+    
+    if not matchups:
+        st.warning(f"No se pueden generar los emparejamientos de {ROUND_LABELS.get(selected_round, selected_round)} aún. Primero completa la ronda anterior.")
     else:
-        st.success("🏁 ¡Mundial finalizado! Todos los resultados están cargados.")
-
-    if ronda_a_rellenar:
-        needed = TEAMS_PER_ROUND[ronda_a_rellenar]
-        label = ROUND_LABELS.get(ronda_a_rellenar, ronda_a_rellenar)
-
-        st.markdown(f"#### ¿Quiénes avanzan a {label}?")
-        st.info(f"Selecciona exactamente **{needed}** equipos clasificados.")
-
-        equipos_seleccionados = st.multiselect(
-            f"Equipos que avanzan:",
-            sorted(equipos_disponibles),
-            max_selections=needed
-        )
-
-        sel_count = len(equipos_seleccionados)
-        progress = sel_count / needed
-        st.progress(progress, text=f"{sel_count}/{needed} equipos seleccionados")
-
-        if sel_count == needed:
-            st.markdown(f"**Equipos seleccionados:**")
-            from config import FLAGS
-            teams_str = "  ·  ".join([f"{FLAGS.get(t,'🏳️')} {t}" for t in equipos_seleccionados])
-            st.markdown(teams_str)
-
-            if st.button(f"✅ Guardar resultados de {label}", type="primary", use_container_width=True):
-                save_result_batch(ronda_a_rellenar, equipos_seleccionados)
-                st.success(f"✅ Resultados de {label} guardados correctamente.")
-                st.rerun()
-        else:
-            st.button(f"Selecciona {needed - sel_count} más...", disabled=True, use_container_width=True)
+        st.markdown(f"### {ROUND_LABELS.get(selected_round, selected_round)} - Resultados por partido")
+        st.info("Introduce el ganador de cada partido. Los resultados se guardarán automáticamente.")
+        
+        # Get existing results for this round
+        existing_results = get_match_results()
+        existing_dict = {r["partido_id"]: r["ganador"] for r in existing_results if r["ronda"] == selected_round}
+        
+        from config import FLAGS
+        
+        for i, (team1, team2) in enumerate(matchups):
+            partido_id = i + 1
+            current_winner = existing_dict.get(partido_id)
+            
+            with st.container(border=True):
+                col1, col2, col3 = st.columns([3, 1, 3])
+                
+                with col1:
+                    flag1 = FLAGS.get(team1, "🏳️")
+                    st.markdown(f"**{flag1} {team1}**")
+                
+                with col2:
+                    st.markdown("<div style='text-align:center; padding:10px 0;'>**VS**</div>", unsafe_allow_html=True)
+                
+                with col3:
+                    flag2 = FLAGS.get(team2, "🏳️")
+                    st.markdown(f"**{flag2} {team2}**")
+                
+                st.markdown("---")
+                
+                # Winner selection
+                winner_options = [team1, team2]
+                winner = st.radio(
+                    f"Ganador del partido {partido_id}:",
+                    winner_options,
+                    key=f"winner_{selected_round}_{partido_id}",
+                    horizontal=True,
+                    label_visibility="collapsed"
+                )
+                
+                # Save button for this match
+                if st.button(f"💾 Guardar resultado partido {partido_id}", key=f"save_{selected_round}_{partido_id}", use_container_width=True):
+                    save_match_result(selected_round, partido_id, team1, team2, winner)
+                    st.success(f"✅ Resultado guardado: {FLAGS.get(winner, '🏳️')} {winner}")
+                    st.rerun()
+    
+    # Show current results for this round
+    st.markdown("---")
+    st.markdown(f"### Resultados actuales - {ROUND_LABELS.get(selected_round, selected_round)}")
+    
+    round_results = [r for r in get_match_results() if r["ronda"] == selected_round]
+    
+    if round_results:
+        for r in round_results:
+            flag = FLAGS.get(r["ganador"], "🏳️")
+            st.markdown(f"**Partido {r['partido_id']}:** {FLAGS.get(r['equipo_local'], '🏳️')} {r['equipo_local']} vs {FLAGS.get(r['equipo_visitante'], '🏳️')} {r['equipo_visitante']} → **{flag} {r['ganador']}**")
+    else:
+        st.info("No hay resultados guardados para esta ronda aún.")
 
 with tab_users:
     st.markdown("#### Usuarios registrados")

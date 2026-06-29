@@ -7,22 +7,45 @@ def init_db():
     pass
 
 def get_results():
-    """Get results from Supabase."""
-    response = supabase.table("results").select("*").execute()
+    """Get results from Supabase - returns winners per round."""
+    response = supabase.table("match_results").select("*").execute()
     results = {r: [] for r in ROUNDS}
     for row in response.data:
         if row["ronda"] in results:
-            results[row["ronda"]].append(row["equipo"])
+            results[row["ronda"]].append(row["ganador"])
     return results
 
-def save_result_batch(ronda, equipos):
-    """Save batch of results to Supabase."""
-    # Delete existing results for this round
-    supabase.table("results").delete().eq("ronda", ronda).execute()
+def get_match_results():
+    """Get all match results with full details."""
+    response = supabase.table("match_results").select("*").order("ronda, partido_id").execute()
+    return response.data
+
+def save_match_result(ronda, partido_id, equipo_local, equipo_visitante, ganador):
+    """Save a single match result to Supabase."""
+    # Check if match result exists
+    existing = supabase.table("match_results").select("*").eq("ronda", ronda).eq("partido_id", partido_id).execute()
     
-    # Insert new results
-    new_rows = [{"ronda": ronda, "equipo": eq} for eq in equipos]
-    supabase.table("results").insert(new_rows).execute()
+    if existing.data:
+        # Update existing
+        supabase.table("match_results").update({
+            "equipo_local": equipo_local,
+            "equipo_visitante": equipo_visitante,
+            "ganador": ganador
+        }).eq("ronda", ronda).eq("partido_id", partido_id).execute()
+    else:
+        # Insert new
+        supabase.table("match_results").insert({
+            "ronda": ronda,
+            "partido_id": partido_id,
+            "equipo_local": equipo_local,
+            "equipo_visitante": equipo_visitante,
+            "ganador": ganador
+        }).execute()
+
+def save_result_batch(ronda, equipos):
+    """Save batch of results to Supabase (legacy support)."""
+    # This is kept for compatibility but not used in new UI
+    pass
 
 def get_current_window():
     """Get current prediction window based on results."""
@@ -48,6 +71,31 @@ def get_teams_for_window(window):
     if window == "P4": return res["cuartos"]
     if window == "P5": return res["semis"]
     return []
+
+def generate_round_matchups(ronda, winners_prev_round):
+    """Generate matchups for a round based on winners of previous round."""
+    if ronda == "dieciseisavos":
+        return ROUND_OF_32_MATCHUPS
+    
+    # For other rounds, pair winners in order
+    matchups = []
+    for i in range(0, len(winners_prev_round) - 1, 2):
+        if i + 1 < len(winners_prev_round):
+            matchups.append((winners_prev_round[i], winners_prev_round[i + 1]))
+    return matchups
+
+def get_round_matchups(ronda):
+    """Get matchups for a specific round, generating them if needed."""
+    if ronda == "dieciseisavos":
+        return ROUND_OF_32_MATCHUPS
+    
+    # Get winners from previous round
+    round_order = ["dieciseisavos", "octavos", "cuartos", "semis", "final"]
+    prev_idx = round_order.index(ronda) - 1
+    prev_round = round_order[prev_idx]
+    
+    winners = get_results().get(prev_round, [])
+    return generate_round_matchups(ronda, winners)
 
 def save_user_prediction(user, window, predictions):
     """Save user prediction to Supabase. predictions is a dict {ronda: [equipos]}."""

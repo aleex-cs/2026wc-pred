@@ -50,6 +50,17 @@ ROUND_OF_32_MATCHUPS = [
     ("Colombia", "Ghana")
 ]
 
+# Emparejamientos dinámicos - se generan según los ganadores de la ronda anterior
+# Estos son placeholders, los reales se generan dinámicamente
+ROUND_MATCHUPS = {
+    "dieciseisavos": ROUND_OF_32_MATCHUPS,
+    "octavos": [],  # Se genera dinámicamente
+    "cuartos": [],  # Se genera dinámicamente
+    "semis": [],    # Se genera dinámicamente
+    "final": [],    # Se genera dinámicamente
+    "campeon": []   # Se genera dinámicamente
+}
+
 FLAGS = {
     "Sudáfrica": "🇿🇦", "Canadá": "🇨🇦",
     "Alemania": "🇩🇪", "Paraguay": "🇵🇾",
