@@ -2,6 +2,8 @@
 from config import ROUNDS, TEAMS_PER_ROUND, ROUND_OF_32_MATCHUPS
 from auth import supabase
 
+# Match-by-match result system
+
 def init_db():
     """Initialize database - no-op for Supabase (schema created via SQL)"""
     pass
