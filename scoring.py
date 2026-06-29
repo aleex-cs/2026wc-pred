@@ -33,6 +33,7 @@ def calculate_user_score(user):
 
             # Debug: log prediction check
             if st.session_state.get("is_admin", False):
+                st.write(f"DEBUG - User {user}, Window {latest_window}, Full pred: {latest_pred}")
                 st.write(f"DEBUG - Checking {equipo} in {ronda}: pred={latest_pred.get(ronda, []) if latest_pred else 'None'}")
 
             if equipo not in latest_pred.get(ronda, []):
