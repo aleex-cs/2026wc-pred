@@ -7,11 +7,6 @@ def calculate_user_score(user):
     total_score = 0
     breakdown = []
 
-    # Debug: log results
-    import streamlit as st
-    if st.session_state.get("is_admin", False):
-        st.write(f"DEBUG - Results for {user}: {results}")
-
     for ronda, equipos_reales in results.items():
         if not equipos_reales:
             continue
@@ -30,11 +25,6 @@ def calculate_user_score(user):
 
             latest_window = user_windows_submitted[-1]
             latest_pred = load_user_prediction(user, latest_window)
-
-            # Debug: log prediction check
-            if st.session_state.get("is_admin", False):
-                st.write(f"DEBUG - User {user}, Window {latest_window}, Full pred: {latest_pred}")
-                st.write(f"DEBUG - Checking {equipo} in {ronda}: pred={latest_pred.get(ronda, []) if latest_pred else 'None'}")
 
             # Special handling for dieciseisavos: check if winner is in octavos prediction
             # because users don't predict dieciseisavos directly in P1
