@@ -132,10 +132,11 @@ with tab_global:
 
 with tab_rounds:
     results = get_results()
-    played_rounds = [r for r in ROUNDS if results.get(r) and r != "dieciseisavos"]
+    # Show rounds that have at least one result (not just completed rounds)
+    played_rounds = [r for r in ROUNDS if results.get(r) and len(results.get(r, [])) > 0]
 
     if not played_rounds:
-        st.info("Aún no hay rondas completadas.")
+        st.info("Aún no hay resultados de ninguna ronda.")
     else:
         round_sel = st.selectbox(
             "Selecciona una ronda",
