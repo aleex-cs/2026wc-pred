@@ -1,70 +1,70 @@
 # 2026 World Cup Bracket Predictor
 
-Aplicación web de predicciones para el Mundial 2026 con sistema de puntuación dinámico. Los usuarios pueden crear sus brackets antes de cada fase eliminatoria y ganar puntos según la anticipación de sus predicciones.
+A web application for 2026 World Cup predictions with a dynamic scoring system. Users can create their brackets before each knockout stage and earn points based on how early they made their predictions.
 
-## 🎯 Características
+## 🎯 Features
 
-- **Sistema de puntuación dinámico**: Multiplicadores que varían según la ventana de predicción (P1-P5)
-- **Bracket interactivo**: Interfaz visual para seleccionar ganadores de cada partido
-- **Panel de administración**: Control de ventanas de predicción y carga de resultados
-- **Clasificación en tiempo real**: Ranking de jugadores con desglose de puntos
-- **Base de datos en la nube**: Integración con Supabase para persistencia de datos
-- **Diseño moderno**: UI oscura con acentos dorados
+- **Dynamic scoring system**: Multipliers that vary based on prediction window (P1-P5)
+- **Interactive bracket**: Visual interface to select winners of each match
+- **Admin panel**: Control prediction windows and load match results
+- **Real-time leaderboard**: Player rankings with point breakdown
+- **Cloud database**: Supabase integration for data persistence
+- **Modern design**: Dark UI with gold accents
 
-## 📊 Sistema de Puntuación
+## 📊 Scoring System
 
-### Puntos Base por Ronda
-- Dieciseisavos: 10 pts
-- Octavos: 20 pts
-- Cuartos: 40 pts
-- Semifinales: 80 pts
-- Finalista: 150 pts
-- Campeón: 300 pts
+### Base Points per Round
+- Round of 16: 10 pts
+- Quarter-finals: 20 pts
+- Semi-finals: 40 pts
+- Finals: 80 pts
+- Finalist: 150 pts
+- Champion: 300 pts
 
-### Multiplicadores de Anticipación
-- **P1 (Inicio)**: ×4 - Bracket inicial perfecto
-- **P2 (Octavos)**: ×3 - Tras ver la fase de grupos
-- **P3 (Cuartos)**: ×2 - Panorama claro
-- **P4 (Semis)**: ×1.5 - Fase final de 4 equipos
-- **P5 (Final)**: ×1 - Predicción directa a partido único
+### Anticipation Multipliers
+- **P1 (Start)**: ×4 - Perfect initial bracket
+- **P2 (Round of 16)**: ×3 - After group stage
+- **P3 (Quarter-finals)**: ×2 - Clear picture
+- **P4 (Semi-finals)**: ×1.5 - Final 4 teams
+- **P5 (Final)**: ×1 - Direct single match prediction
 
-### Regla Crítica
-Los puntos no son acumulables entre ventanas. Solo cuenta la versión más reciente de la predicción. Si modificas tu predicción, pierdes los multiplicadores de ventanas anteriores.
+### Critical Rule
+Points are not cumulative between windows. Only the most recent prediction version counts. If you modify your prediction, you lose multipliers from previous windows.
 
-## 🚀 Instalación
+## 🚀 Installation
 
-### Requisitos previos
+### Prerequisites
 - Python 3.8+
-- Cuenta en [Supabase](https://supabase.com)
+- [Supabase](https://supabase.com) account
 
-### 1. Clonar el repositorio
+### 1. Clone the repository
 ```bash
 git clone https://github.com/aleex-cs/2026wc-pred.git
 cd 2026wc-pred
 ```
 
-### 2. Instalar dependencias
+### 2. Install dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Configurar Supabase
+### 3. Configure Supabase
 
-1. Crea un proyecto en [supabase.com](https://supabase.com)
-2. Ve a Settings → API y copia tu `Project URL` y `anon public key`
-3. Crea el archivo `.streamlit/secrets.toml`:
+1. Create a project at [supabase.com](https://supabase.com)
+2. Go to Settings → API and copy your `Project URL` and `anon public key`
+3. Create the file `.streamlit/secrets.toml`:
 ```toml
-SUPABASE_URL = "tu_url_del_proyecto"
-SUPABASE_KEY = "tu_anon_key"
-ADMIN_PASSWORD = "tu_contraseña_admin"
+SUPABASE_URL = "your_project_url"
+SUPABASE_KEY = "your_anon_key"
+ADMIN_PASSWORD = "your_admin_password"
 ```
 
-### 4. Configurar la base de datos
+### 4. Set up the database
 
-Ejecuta el siguiente SQL en el SQL Editor de Supabase:
+Run the following SQL in Supabase SQL Editor:
 
 ```sql
--- Tabla de resultados del torneo
+-- Tournament results table
 CREATE TABLE results (
     id SERIAL PRIMARY KEY,
     ronda VARCHAR(50) NOT NULL,
@@ -72,7 +72,7 @@ CREATE TABLE results (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
--- Tabla de predicciones de usuarios
+-- User predictions table
 CREATE TABLE predictions (
     id SERIAL PRIMARY KEY,
     username VARCHAR(100) NOT NULL,
@@ -84,7 +84,7 @@ CREATE TABLE predictions (
     UNIQUE(username, prediction_window)
 );
 
--- Tabla de locks de predicciones
+-- Prediction locks table
 CREATE TABLE prediction_locks (
     id SERIAL PRIMARY KEY,
     username VARCHAR(100) NOT NULL,
@@ -93,14 +93,14 @@ CREATE TABLE prediction_locks (
     UNIQUE(username, prediction_window)
 );
 
--- Tabla de estado de ventanas (control de admin)
+-- Window state table (admin control)
 CREATE TABLE windows_state (
     prediction_window VARCHAR(10) PRIMARY KEY,
     enabled BOOLEAN DEFAULT TRUE,
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- Insertar estado inicial de ventanas
+-- Insert initial window states
 INSERT INTO windows_state (prediction_window, enabled) VALUES
     ('P1', true),
     ('P2', true),
@@ -109,84 +109,84 @@ INSERT INTO windows_state (prediction_window, enabled) VALUES
     ('P5', true)
 ON CONFLICT (prediction_window) DO NOTHING;
 
--- Índices para mejor rendimiento
+-- Performance indexes
 CREATE INDEX idx_results_ronda ON results(ronda);
 CREATE INDEX idx_predictions_username ON predictions(username);
 CREATE INDEX idx_predictions_window ON predictions(prediction_window);
 CREATE INDEX idx_prediction_locks_username ON prediction_locks(username);
 ```
 
-### 5. Ejecutar la aplicación
+### 5. Run the application
 ```bash
 streamlit run app.py
 ```
 
-## 👥 Uso
+## 👥 Usage
 
-### Para jugadores
+### For Players
 
-1. **Crear cuenta**: Regístrate con un nombre de usuario y contraseña
-2. **Hacer predicciones**: Ve a "Mi Predicción" y selecciona los ganadores de cada partido
-3. **Bloquear predicción**: Una vez completado el bracket, confírmalo para bloquearlo
-4. **Ver clasificación**: Consulta el ranking y tus puntos en "Clasificación"
-5. **Consultar reglamento**: Revisa el sistema de puntuación en "Reglamento"
+1. **Create account**: Register with a username and password
+2. **Make predictions**: Go to "My Prediction" and select winners for each match
+3. **Lock prediction**: Once the bracket is complete, confirm to lock it
+4. **View leaderboard**: Check rankings and your points in "Leaderboard"
+5. **Review rules**: Check the scoring system in "Rules"
 
-### Para administradores
+### For Administrators
 
-1. **Iniciar sesión como admin**: Usa el usuario "admin" con la contraseña configurada
-2. **Cargar resultados**: En el panel de Admin, carga los equipos clasificados de cada ronda
-3. **Controlar ventanas**: Activa/desactiva las ventanas de predicción según la fase del torneo
-4. **Gestionar usuarios**: Ver todos los usuarios registrados y sus predicciones bloqueadas
+1. **Login as admin**: Use username "admin" with the configured password
+2. **Load results**: In the Admin panel, load qualified teams for each round
+3. **Control windows**: Enable/disable prediction windows based on tournament stage
+4. **Manage users**: View all registered users and their locked predictions
 
-## 📁 Estructura del proyecto
+## 📁 Project Structure
 
 ```
 worldcup_app/
-├── app.py                 # Página principal
-├── auth.py                # Sistema de autenticación
-├── config.py              # Configuración del torneo
-├── data_manager.py        # Gestión de datos (Supabase)
-├── scoring.py             # Cálculo de puntuaciones
-├── styles.py              # Estilos CSS personalizados
-├── requirements.txt       # Dependencias de Python
+├── app.py                 # Main page
+├── auth.py                # Authentication system
+├── config.py              # Tournament configuration
+├── data_manager.py        # Data management (Supabase)
+├── scoring.py             # Score calculation
+├── styles.py              # Custom CSS styles
+├── requirements.txt       # Python dependencies
 ├── pages/
-│   ├── 1___Predicción.py  # Página de predicciones
-│   ├── 2___Clasificación.py # Página de clasificación
-│   ├── 3___Admin.py       # Panel de administración
-│   └── 4___Reglamento.py  # Reglamento de puntuación
+│   ├── 1___Predicción.py  # Predictions page
+│   ├── 2___Clasificación.py # Leaderboard page
+│   ├── 3___Admin.py       # Admin panel
+│   └── 4___Reglamento.py  # Scoring rules
 └── .streamlit/
-    └── secrets.toml        # Credenciales de Supabase
+    └── secrets.toml        # Supabase credentials
 ```
 
-## 🔧 Configuración
+## 🔧 Configuration
 
-### Ventanas de predicción
+### Prediction Windows
 
-Las ventanas se activan automáticamente según los resultados cargados:
-- **P1**: Antes de que haya resultados de dieciseisavos
-- **P2**: Después de cargar resultados de dieciseisavos
-- **P3**: Después de cargar resultados de octavos
-- **P4**: Después de cargar resultados de cuartos
-- **P5**: Después de cargar resultados de semifinales
+Windows activate automatically based on loaded results:
+- **P1**: Before round of 16 results
+- **P2**: After loading round of 16 results
+- **P3**: After loading quarter-final results
+- **P4**: After loading semi-final results
+- **P5**: After loading final results
 
-El admin puede manualmente activar/desactivar cualquier ventana desde el panel de administración.
+Admin can manually enable/disable any window from the admin panel.
 
-## 🏆 Equipos participantes
+## 🏆 Participating Teams
 
-El torneo incluye 32 equipos divididos en emparejamientos de dieciseisavos:
+The tournament includes 32 teams divided into round of 16 matchups:
 
-**Lado izquierdo**: Alemania, Paraguay, Francia, Suecia, Sudáfrica, Canadá, Países Bajos, Marruecos, Portugal, Croacia, España, Austria, Estados Unidos, Bosnia y H., Bélgica, Senegal
+**Left side**: Germany, Paraguay, France, Sweden, South Africa, Canada, Netherlands, Morocco, Portugal, Croatia, Spain, Austria, United States, Bosnia & H., Belgium, Senegal
 
-**Lado derecho**: Brasil, Japón, Costa de Marfil, Noruega, México, Ecuador, Inglaterra, RD Congo, Argentina, Cabo Verde, Australia, Egipto, Suiza, Argelia, Colombia, Ghana
+**Right side**: Brazil, Japan, Ivory Coast, Norway, Mexico, Ecuador, England, DR Congo, Argentina, Cape Verde, Australia, Egypt, Switzerland, Algeria, Colombia, Ghana
 
-## 📝 Licencia
+## 📝 License
 
-Este proyecto es de código abierto y está disponible bajo la licencia MIT.
+This project is open source and available under the MIT License.
 
-## 🤝 Contribuciones
+## 🤝 Contributing
 
-Las contribuciones son bienvenidas. Si encuentras un bug o tienes una sugerencia, abre un issue en el repositorio.
+Contributions are welcome. If you find a bug or have a suggestion, open an issue in the repository.
 
-## 📧 Contacto
+## 📧 Contact
 
-Para cualquier pregunta, contacta a través del repositorio de GitHub.
+For any questions, reach out through the GitHub repository.
