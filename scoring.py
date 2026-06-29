@@ -36,8 +36,14 @@ def calculate_user_score(user):
                 st.write(f"DEBUG - User {user}, Window {latest_window}, Full pred: {latest_pred}")
                 st.write(f"DEBUG - Checking {equipo} in {ronda}: pred={latest_pred.get(ronda, []) if latest_pred else 'None'}")
 
-            if equipo not in latest_pred.get(ronda, []):
-                continue
+            # Special handling for dieciseisavos: check if winner is in octavos prediction
+            # because users don't predict dieciseisavos directly in P1
+            if ronda == "dieciseisavos":
+                if equipo not in latest_pred.get("octavos", []):
+                    continue
+            else:
+                if equipo not in latest_pred.get(ronda, []):
+                    continue
 
             earliest_chain_window = latest_window
             for w in reversed(user_windows_submitted[:-1]):
@@ -85,8 +91,13 @@ def calculate_user_score_by_round(user):
             latest_window = user_windows_submitted[-1]
             latest_pred = load_user_prediction(user, latest_window)
 
-            if equipo not in latest_pred.get(ronda, []):
-                continue
+            # Special handling for dieciseisavos: check if winner is in octavos prediction
+            if ronda == "dieciseisavos":
+                if equipo not in latest_pred.get("octavos", []):
+                    continue
+            else:
+                if equipo not in latest_pred.get(ronda, []):
+                    continue
 
             earliest_chain_window = latest_window
             for w in reversed(user_windows_submitted[:-1]):
